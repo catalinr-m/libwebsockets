@@ -91,7 +91,6 @@ lws_tls_reuse_session(struct lws *wsi)
 	}
 
 	lwsl_tlssess("%s: %s\n", __func__, (const char *)&ts[1]);
-	wsi->tls_session_reused = 1;
 
 	if (!SSL_set_session(wsi->tls.ssl, ts->session)) {
 		lwsl_err("%s: session not set for %s\n", __func__, tag);
@@ -154,7 +153,6 @@ lws_tls_session_expiry_cb(lws_sorted_usec_list_t *sul)
 	struct lws_vhost *vh = lws_container_of(ts->list.owner,
 						struct lws_vhost, tls_sessions);
 
-	lws_sul_cancel(&ts->sul_ttl);
 	lws_context_lock(vh->context, __func__); /* -------------- cx { */
 	lws_vhost_lock(vh); /* -------------- vh { */
 	__lws_tls_session_destroy(ts);
@@ -407,7 +405,7 @@ lws_tls_session_dump_load(struct lws_vhost *vh, const char *host, uint16_t port,
 {
 	struct lws_tls_session_dump d;
 	lws_tls_sco_t *ts;
-	SSL_SESSION *sess;
+	SSL_SESSION *sess = NULL; // allow it to "bail" early
 	void *v;
 
 	if (vh->options & LWS_SERVER_OPTION_DISABLE_TLS_SESSION_CACHE)
