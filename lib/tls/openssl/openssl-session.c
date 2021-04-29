@@ -316,8 +316,11 @@ lws_sess_cache_synth_cb(lws_sorted_usec_list_t *sul)
 
 	sess = SSL_get1_session(tls->ssl);
 
-	if (SSL_SESSION_is_resumable(sess))
-		lws_tls_session_new_cb(tls->ssl, sess);
+	if (!SSL_SESSION_is_resumable(sess) ||       /* not worth caching, or */
+	    !lws_tls_session_new_cb(tls->ssl, sess)) /* cb didn't keep it     */
+	{
+		SSL_SESSION_free(sess); /* schedule it again? */
+	}
 }
 #endif
 
